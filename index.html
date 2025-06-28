@@ -7,7 +7,7 @@
 <style>
 body{margin:0;font-family:'Segoe UI',Roboto,sans-serif;background:#fafafa;color:#222}
 svg{width:100%;height:350px;display:block}
-.axis path,.axis line{stroke:#000;stroke-width:1;shape-rendering:crispEdges}
+.axis path{stroke:#000;stroke-width:1;shape-rendering:crispEdges}
 .grid line{stroke:#ddd;stroke-dasharray:2 2}
 .tooltip{position:absolute;background:#fff;border:1px solid #ccc;padding:4px;font-size:12px;pointer-events:none}
 </style>
@@ -30,8 +30,8 @@ fetch('scatter_data.json').then(r=>r.json()).then(data=>{
       const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
       const x=d3.scaleLinear().domain(d3.extent(data,d=>+d[xKey])).nice().range([0,w]);
       const y=d3.scaleLinear().domain(d3.extent(data,d=>+d[yKey])).nice().range([300,0]);
-      const xAxis=g.append('g').attr('transform','translate(0,300)').call(d3.axisBottom(x).ticks(8).tickSize(-300));
-      const yAxis=g.append('g').call(d3.axisLeft(y).ticks(8).tickSize(-w));
+      const xAxis=g.append('g').attr('class','axis grid').attr('transform','translate(0,300)').call(d3.axisBottom(x).ticks(8).tickSize(-300));
+      const yAxis=g.append('g').attr('class','axis grid').call(d3.axisLeft(y).ticks(8).tickSize(-w));
       g.selectAll('circle').data(data).enter().append('circle')
         .attr('cx',d=>x(d[xKey])).attr('cy',d=>y(d[yKey]))
         .attr('r',6).attr('fill','steelblue').attr('opacity',0.2)

@@ -1,7 +1,6 @@
 import pandas as pd
 import json
 import re
-import numpy as np
 import random
 import os
 
@@ -28,7 +27,8 @@ def parse_price(s):
 
 
 def main():
-    df = pd.read_csv('reviews_feb_2023.csv')
+    random.seed(42)
+    df = pd.read_csv('reviews_feb_2023.csv.xz')
     df['price'] = df['est_price'].apply(parse_price)
     for col in ['aroma', 'flavor', 'rating']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
