@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Price of Perfection: What Makes a $175-Per-Ounce Coffee Worth It</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "nyt-cheltenham", "nyt-imperial", Georgia, "Times New Roman", Times, serif;
+            background-color: #ffffff;
+            color: #121212;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .story-container {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .headline {
+            font-family: "nyt-cheltenham", Georgia, serif;
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 40px 0 20px 0;
+            color: #121212;
+        }
+        
+        .subhead {
+            font-family: "nyt-imperial", Georgia, serif;
+            font-size: clamp(18px, 2.5vw, 24px);
+            font-weight: 400;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+        
+        .byline {
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #e2e2e2;
+            padding-bottom: 20px;
+        }
+        
+        .story-text {
+            font-family: "nyt-imperial", Georgia, serif;
+            font-size: 20px;
+            line-height: 1.7;
+            color: #121212;
+            margin-bottom: 40px;
+            max-width: 600px;
+        }
+        
+        .story-text p {
+            margin-bottom: 20px;
+        }
+        
+        .story-text .dropcap {
+            float: left;
+            font-family: "nyt-cheltenham", Georgia, serif;
+            font-size: 84px;
+            line-height: 1;
+            padding-right: 8px;
+            padding-top: 4px;
+            font-weight: 700;
+        }
+        
+        .chart-section {
+            margin: 60px 0;
+            clear: both;
+        }
+        
+        .chart-container {
+            margin-bottom: 80px;
+        }
+        
+        .chart-headline {
+            font-family: "nyt-cheltenham", Georgia, serif;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #121212;
+        }
+        
+        .chart-subhead {
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+        
+        .axis {
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .axis-label {
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .grid line {
+            stroke: #f0f0f0;
+            stroke-width: 1;
+            opacity: 0.7;
+        }
+        
+        .grid path {
+            stroke-width: 0;
+        }
+        
+        .axis line, .axis path {
+            stroke: #333;
+            stroke-width: 1;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(18, 18, 18, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            backdrop-filter: blur(4px);
+        }
+        
+        .trend-line {
+            fill: none;
+            stroke: #ff6b35;
+            stroke-width: 3;
+            opacity: 0.8;
+        }
+        
+        .data-point {
+            fill: #1f77b4;
+            opacity: 0.4;
+            transition: opacity 0.2s ease;
+        }
+        
+        .data-point:hover {
+            opacity: 0.8;
+        }
+        
+        .pullquote {
+            font-family: "nyt-cheltenham", Georgia, serif;
+            font-size: 28px;
+            line-height: 1.3;
+            color: #121212;
+            margin: 40px 0;
+            padding: 0 40px;
+            border-left: 4px solid #ff6b35;
+            font-weight: 400;
+            font-style: italic;
+        }
+        
+        .highlight-box {
+            background: #f8f8f8;
+            border-left: 4px solid #ff6b35;
+            padding: 20px;
+            margin: 40px 0;
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        
+        .highlight-box h3 {
+            font-family: "nyt-cheltenham", Georgia, serif;
+            font-size: 18px;
+            margin-top: 0;
+            color: #121212;
+        }
+        
+        footer {
+            margin-top: 80px;
+            padding: 40px 0;
+            border-top: 1px solid #e2e2e2;
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .methodology {
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #666;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e2e2;
+        }
+        
+        .outlier-controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .outlier-btn {
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        
+        .outlier-btn:hover {
+            background: #e8e8e8;
+        }
+        
+        .outlier-btn.active {
+            background: #ff6b35;
+            color: white;
+            border-color: #ff6b35;
+        }
+        
+        .outlier-narrative {
+            background: #f9f9f9;
+            border-left: 4px solid #ff6b35;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: "nyt-imperial", Georgia, serif;
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+        
+        .outlier-narrative.show {
+            opacity: 1;
+            max-height: 300px;
+        }
+        
+        .outlier-annotation {
+            pointer-events: none;
+            font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            fill: #333;
+            font-weight: 500;
+        }
+        
+        .outlier-line {
+            stroke: #ff6b35;
+            stroke-width: 1;
+            stroke-dasharray: 2,2;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .outlier-point {
+            stroke: #ff6b35;
+            stroke-width: 2;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .outlier-point.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .story-container {
+                padding: 0 15px;
+            }
+            
+            .pullquote {
+                font-size: 22px;
+                padding: 0 20px;
+            }
+            
+            .chart-headline {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="tooltip" class="tooltip"></div>
+    
+    <div class="story-container">
+        <h1 class="headline">The Price of Perfection: What Makes a $175-Per-Ounce Coffee Worth It</h1>
+        
+        <div class="subhead">An analysis of 3,779 coffee reviews reveals the surprising relationship between price, sensory scores, and what coffee lovers are actually paying for.</div>
+        
+        <div class="byline">
+            By Data Visualization Team • Published Today
+        </div>
+        
+        <div class="story-text">
+            <p><span class="dropcap">I</span>n a world where a cup of coffee can cost anywhere from 50 cents to $50, what exactly determines the price we're willing to pay for our daily brew? Our analysis of nearly 4,000 professional coffee reviews reveals a complex relationship between price, aroma, flavor, and overall rating that challenges conventional wisdom about luxury coffee.</p>
+            
+            <p>The data, sourced from CoffeeReview.com's comprehensive database, tells a story of diminishing returns, quality thresholds, and the premium consumers pay for perfection. While most coffee falls into a predictable sweet spot of quality and price, the outliers—those $100+ per ounce rarities—operate by entirely different rules.</p>
+        </div>
+        
+        <div class="chart-section">
+            <div class="chart-container">
+                <div class="chart-headline">Price Doesn't Always Predict Quality</div>
+                <div class="chart-subhead">While there's a general upward trend, some of the highest-rated coffees cost less than $5 per ounce</div>
+                <svg id="price-chart"></svg>
+            </div>
+        </div>
+        
+        <div class="story-text">
+            <p>The relationship between price and rating reveals the first surprise: excellence doesn't require extravagance. Some of the highest-rated coffees in our dataset—those scoring 95+ points—cost less than $5 per ounce. Meanwhile, coffees priced above $50 per ounce show inconsistent quality, suggesting that extreme pricing often reflects rarity or marketing rather than pure taste.</p>
+        </div>
+        
+        <div class="pullquote">
+            "The sweet spot for exceptional coffee appears to be between $2-$10 per ounce, where quality and value intersect most favorably."
+        </div>
+        
+        <div class="chart-section">
+            <div class="chart-container">
+                <div class="chart-headline">Aroma: The Most Reliable Predictor of Excellence</div>
+                <div class="chart-subhead">Higher aroma scores show the strongest correlation with overall rating, more so than price</div>
+                <svg id="aroma-chart"></svg>
+            </div>
+        </div>
+        
+        <div class="story-text">
+            <p>Professional coffee reviewers use a 10-point scale to evaluate aroma, and our analysis shows this metric is remarkably predictive of overall satisfaction. Coffees scoring 9 or 10 on aroma rarely disappoint, clustering tightly in the 92-97 rating range. This suggests that a coffee's smell—often the first sensory experience—is indeed a reliable indicator of quality.</p>
+        </div>
+        
+        <div class="highlight-box">
+            <h3>The Science Behind Aroma</h3>
+            <p>Coffee's aroma comes from over 800 volatile compounds that develop during roasting. These compounds not only signal proper roasting technique but also influence taste perception through retronasal olfaction—the phenomenon where smell enhances flavor.</p>
+        </div>
+        
+        <div class="chart-section">
+            <div class="chart-container">
+                <div class="chart-headline">The Flavor Paradox: When Great Taste Doesn't Guarantee Great Ratings</div>
+                <div class="chart-subhead">While flavor strongly predicts rating, some outliers reveal the complex psychology of coffee evaluation</div>
+                <div class="outlier-controls">
+                    <button id="show-overachievers" class="outlier-btn">Show Overachievers</button>
+                    <button id="show-underachievers" class="outlier-btn">Show Disappointments</button>
+                    <button id="show-all" class="outlier-btn active">Show All</button>
+                </div>
+                <svg id="flavor-chart"></svg>
+                <div id="outlier-story" class="outlier-narrative"></div>
+            </div>
+        </div>
+        
+        <div class="story-text">
+            <p>As expected, flavor shows the strongest correlation with overall rating. However, the distribution reveals interesting patterns: while poor flavor (scores below 8) virtually guarantees a mediocre rating, excellent flavor scores alone don't guarantee premium pricing. This suggests that other factors—origin rarity, processing methods, or brand reputation—drive the highest prices.</p>
+            
+            <p>The data ultimately reveals that coffee excellence is more democratic than its pricing suggests. While the most expensive coffees can indeed be exceptional, the path to a truly great cup doesn't require breaking the bank. The sweet spot for exceptional coffee appears to be between $2-$10 per ounce, where passionate roasters focus on perfecting their craft rather than chasing premium positioning.</p>
+        </div>
+        
+        <div class="methodology">
+            <strong>Methodology:</strong> This analysis is based on 3,779 coffee reviews from CoffeeReview.com, filtered to remove outliers (keeping data within the 0.5-99.5 percentile range for each metric). Price represents cost per ounce calculated from listed retail prices. Rating data reflects professional cupping scores on a 100-point scale.
+        </div>
+        
+        <footer>
+            Data visualization of coffee reviews. Source: <a href="https://coffeereview.com" target="_blank" style="color: #326891;">CoffeeReview.com</a>
+        </footer>
+    </div>
+
+    <script>
+        let data = [];
+        const tooltip = d3.select("#tooltip");
+        
+        const margin = {top: 20, right: 30, bottom: 60, left: 70};
+        let width = Math.min(window.innerWidth - 40, 800) - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+        
+        // Enhanced LOESS implementation
+        function loess(data, bandwidth = 0.25) {
+            const n = data.length;
+            const result = [];
+            const sortedData = data.sort((a, b) => a.x - b.x);
+            
+            for (let i = 0; i < n; i += Math.max(1, Math.floor(n / 50))) {
+                const x0 = sortedData[i].x;
+                const distances = sortedData.map(d => Math.abs(d.x - x0));
+                const maxDistance = d3.quantile(distances.sort(d3.ascending), bandwidth);
+                
+                let sumWeights = 0;
+                let sumWeightedY = 0;
+                
+                for (let j = 0; j < n; j++) {
+                    const distance = Math.abs(sortedData[j].x - x0);
+                    if (distance <= maxDistance) {
+                        const weight = Math.pow(1 - Math.pow(distance / maxDistance, 3), 3);
+                        sumWeights += weight;
+                        sumWeightedY += weight * sortedData[j].y;
+                    }
+                }
+                
+                if (sumWeights > 0) {
+                    result.push({x: x0, y: sumWeightedY / sumWeights});
+                }
+            }
+            
+            return result;
+        }
+        
+        function createChart(svgId, xField, xLabel, chartType) {
+            const svg = d3.select(`#${svgId}`)
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+            
+            svg.selectAll("*").remove();
+            
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            // Scales
+            const xScale = d3.scaleLinear()
+                .domain(d3.extent(data, d => d[xField]))
+                .range([0, width]);
+            
+            const yScale = d3.scaleLinear()
+                .domain([85, 98])
+                .range([height, 0]);
+            
+            // Grid lines
+            g.append("g")
+                .attr("class", "grid")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale)
+                    .ticks(chartType === 'price' ? 8 : 6)
+                    .tickSize(-height)
+                    .tickFormat(""));
+            
+            g.append("g")
+                .attr("class", "grid")
+                .call(d3.axisLeft(yScale)
+                    .ticks(6)
+                    .tickSize(-width)
+                    .tickFormat(""));
+            
+            // Axes
+            const xAxis = chartType === 'price' ? 
+                d3.axisBottom(xScale).ticks(8).tickFormat(d => `$${d}`) :
+                d3.axisBottom(xScale).ticks(6);
+                
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(xAxis);
+            
+            g.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale).ticks(6));
+            
+            // Axis labels
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", `translate(${width/2}, ${height + 45})`)
+                .style("text-anchor", "middle")
+                .text(xLabel);
+            
+            g.append("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left + 20)
+                .attr("x", 0 - (height / 2))
+                .style("text-anchor", "middle")
+                .text("Overall Rating");
+            
+            // Enhanced trend line (draw first so points appear on top)
+            const loessData = loess(data.map(d => ({x: d[xField], y: d.rating})));
+            
+            const line = d3.line()
+                .x(d => xScale(d.x))
+                .y(d => yScale(d.y))
+                .curve(d3.curveCardinal);
+            
+            g.append("path")
+                .datum(loessData)
+                .attr("class", "trend-line")
+                .attr("d", line);
+            
+            // Data points with enhanced styling
+            g.selectAll(".data-point")
+                .data(data)
+                .enter().append("circle")
+                .attr("class", "data-point")
+                .attr("r", 2.5)
+                .attr("cx", d => xScale(d[xField]))
+                .attr("cy", d => yScale(d.rating))
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("r", 4);
+                    tooltip.transition().duration(200).style("opacity", 1);
+                    tooltip.html(`
+                        <strong>${xLabel}:</strong> ${chartType === 'price' ? '$' + d[xField].toFixed(2) : d[xField].toFixed(1)}<br>
+                        <strong>Rating:</strong> ${d.rating}<br>
+                        <strong>Aroma:</strong> ${d.aroma}<br>
+                        <strong>Flavor:</strong> ${d.flavor}
+                    `)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("r", 2.5);
+                    tooltip.transition().duration(300).style("opacity", 0);
+                });
+            
+            // Special handling for flavor chart outliers
+            if (chartType === 'flavor') {
+                createFlavorOutliers(g, xScale, yScale);
+            }
+        }
+        
+        function createFlavorOutliers(g, xScale, yScale) {
+            // Calculate expected rating for each point based on trend
+            const loessData = loess(data.map(d => ({x: d.flavor, y: d.rating})));
+            
+            // Find outliers
+            const outliers = data.map(d => {
+                // Find closest trend point
+                const closest = loessData.reduce((prev, curr) => 
+                    Math.abs(curr.x - d.flavor) < Math.abs(prev.x - d.flavor) ? curr : prev
+                );
+                const deviation = d.rating - closest.y;
+                return {
+                    ...d,
+                    deviation,
+                    isOverachiever: deviation > 2.5,
+                    isUnderachiever: deviation < -2.5
+                };
+            });
+            
+            const overachievers = outliers.filter(d => d.isOverachiever);
+            const underachievers = outliers.filter(d => d.isUnderachiever);
+            
+            // Create outlier groups
+            const outlierGroup = g.append("g").attr("class", "outlier-annotations");
+            
+            // Overachiever points
+            outlierGroup.selectAll(".overachiever")
+                .data(overachievers)
+                .enter().append("circle")
+                .attr("class", "outlier-point overachiever")
+                .attr("r", 4)
+                .attr("cx", d => xScale(d.flavor))
+                .attr("cy", d => yScale(d.rating))
+                .attr("fill", "none");
+            
+            // Underachiever points  
+            outlierGroup.selectAll(".underachiever")
+                .data(underachievers)
+                .enter().append("circle")
+                .attr("class", "outlier-point underachiever")
+                .attr("r", 4)
+                .attr("cx", d => xScale(d.flavor))
+                .attr("cy", d => yScale(d.rating))
+                .attr("fill", "none");
+            
+            // Annotation lines and labels for top outliers
+            const topOverachiever = overachievers.sort((a, b) => b.deviation - a.deviation)[0];
+            const topUnderachiever = underachievers.sort((a, b) => a.deviation - b.deviation)[0];
+            
+            if (topOverachiever) {
+                const x = xScale(topOverachiever.flavor);
+                const y = yScale(topOverachiever.rating);
+                
+                outlierGroup.append("line")
+                    .attr("class", "outlier-line overachiever-line")
+                    .attr("x1", x).attr("y1", y)
+                    .attr("x2", x + 40).attr("y2", y - 30);
+                
+                outlierGroup.append("text")
+                    .attr("class", "outlier-annotation overachiever-text")
+                    .attr("x", x + 45).attr("y", y - 35)
+                    .text(`Exceeds expectations by ${topOverachiever.deviation.toFixed(1)} points`);
+            }
+            
+            if (topUnderachiever) {
+                const x = xScale(topUnderachiever.flavor);
+                const y = yScale(topUnderachiever.rating);
+                
+                outlierGroup.append("line")
+                    .attr("class", "outlier-line underachiever-line")
+                    .attr("x1", x).attr("y1", y)
+                    .attr("x2", x - 40).attr("y2", y + 30);
+                
+                outlierGroup.append("text")
+                    .attr("class", "outlier-annotation underachiever-text")
+                    .attr("x", x - 45).attr("y", y + 35)
+                    .attr("text-anchor", "end")
+                    .text(`Falls short by ${Math.abs(topUnderachiever.deviation).toFixed(1)} points`);
+            }
+            
+            // Store outlier data for interactive controls
+            window.flavorOutliers = { overachievers, underachievers };
+        }
+        
+        function updateCharts() {
+            width = Math.min(window.innerWidth - 40, 800) - margin.left - margin.right;
+            
+            createChart("price-chart", "price", "Price per ounce", "price");
+            createChart("aroma-chart", "aroma", "Aroma score", "aroma");
+            createChart("flavor-chart", "flavor", "Flavor score", "flavor");
+        }
+        
+        // Outlier interaction controls
+        function setupOutlierControls() {
+            const showAll = document.getElementById('show-all');
+            const showOverachievers = document.getElementById('show-overachievers');
+            const showUnderachievers = document.getElementById('show-underachievers');
+            const narrative = document.getElementById('outlier-story');
+            
+            const narratives = {
+                overachievers: `
+                    <strong>The Overachievers:</strong> These coffees punch above their weight, achieving ratings that exceed what their flavor scores predict. 
+                    Often, these represent exceptional processing methods, unique terroir, or masterful roasting that elevates the overall experience beyond pure taste. 
+                    The highest overachiever exceeds expectations by ${window.flavorOutliers?.overachievers[0]?.deviation.toFixed(1) || 'X'} points—
+                    a testament to the holistic nature of coffee evaluation.
+                `,
+                underachievers: `
+                    <strong>The Disappointments:</strong> Despite high flavor scores, these coffees failed to deliver the complete experience reviewers expected. 
+                    This could indicate issues with body, acidity balance, or aftertaste that aren't captured in the flavor metric alone. 
+                    The biggest disappointment falls short by ${Math.abs(window.flavorOutliers?.underachievers[0]?.deviation || 0).toFixed(1)} points—
+                    showing that great flavor isn't everything in coffee evaluation.
+                `,
+                all: ``
+            };
+            
+            function updateOutlierDisplay(type) {
+                // Update button states
+                document.querySelectorAll('.outlier-btn').forEach(btn => btn.classList.remove('active'));
+                
+                // Update annotations visibility
+                d3.selectAll('.outlier-point').classed('show', false);
+                d3.selectAll('.outlier-line').style('opacity', 0);
+                d3.selectAll('.outlier-annotation').style('opacity', 0);
+                
+                // Show narrative
+                narrative.innerHTML = narratives[type];
+                narrative.classList.toggle('show', type !== 'all');
+                
+                if (type === 'overachievers') {
+                    showOverachievers.classList.add('active');
+                    d3.selectAll('.overachiever').classed('show', true);
+                    d3.selectAll('.overachiever-line').style('opacity', 1);
+                    d3.selectAll('.overachiever-text').style('opacity', 1);
+                } else if (type === 'underachievers') {
+                    showUnderachievers.classList.add('active');
+                    d3.selectAll('.underachiever').classed('show', true);
+                    d3.selectAll('.underachiever-line').style('opacity', 1);
+                    d3.selectAll('.underachiever-text').style('opacity', 1);
+                } else {
+                    showAll.classList.add('active');
+                }
+            }
+            
+            showAll.addEventListener('click', () => updateOutlierDisplay('all'));
+            showOverachievers.addEventListener('click', () => updateOutlierDisplay('overachievers'));
+            showUnderachievers.addEventListener('click', () => updateOutlierDisplay('underachievers'));
+        }
+        
+        // Load data and create charts
+        d3.json("scatter_data.json").then(function(loadedData) {
+            data = loadedData;
+            updateCharts();
+            
+            // Setup outlier controls after charts are created
+            setTimeout(() => {
+                setupOutlierControls();
+            }, 100);
+        });
+        
+        // Responsive updates
+        window.addEventListener('resize', updateCharts);
+    </script>
+</body>
+</html>
