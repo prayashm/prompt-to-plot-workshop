@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Coffee Review Scatter Trends</title>
 <style>
-body{margin:0;font-family:'Segoe UI',Roboto,sans-serif;background:#fafafa;color:#222}
+body{margin:0;font-family:'Segoe UI',Roboto,sans-serif;background:#fcfcfc;color:#333}
 svg{width:100%;height:350px;display:block}
-.axis path{stroke:#000;stroke-width:1;shape-rendering:crispEdges}
-.grid line{stroke:#ddd;stroke-dasharray:2 2}
-.tooltip{position:absolute;background:#fff;border:1px solid #ccc;padding:4px;font-size:12px;pointer-events:none}
+.axis path,.axis line{stroke:#333;stroke-width:1;shape-rendering:crispEdges}
+.grid .tick line{stroke:#ccc;stroke-dasharray:2 2}
+.axis text{font-size:12px}
+.trend{stroke:orange;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tooltip{position:absolute;background:#fff;border:1px solid #ccc;padding:4px;font-size:12px;pointer-events:none;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
 </style>
 </head>
 <body>
@@ -19,7 +21,7 @@ svg{width:100%;height:350px;display:block}
 <script>
 fetch('scatter_data.json').then(r=>r.json()).then(data=>{
   const plots=[['Price ($/oz)','rating','price'],['Aroma','rating','aroma'],['Flavor','rating','flavor']],
-        div=d3.select('#plots'),margin={top:20,right:20,bottom:40,left:50};
+        div=d3.select('#plots'),margin={top:20,right:20,bottom:40,left:50},height=300;
   const tip=d3.select('body').append('div').attr('class','tooltip').style('opacity',0);
   function draw(){
     div.selectAll('*').remove();
@@ -29,9 +31,9 @@ fetch('scatter_data.json').then(r=>r.json()).then(data=>{
       const svg=div.append('svg');
       const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
       const x=d3.scaleLinear().domain(d3.extent(data,d=>+d[xKey])).nice().range([0,w]);
-      const y=d3.scaleLinear().domain(d3.extent(data,d=>+d[yKey])).nice().range([300,0]);
-      const xAxis=g.append('g').attr('class','axis grid').attr('transform','translate(0,300)').call(d3.axisBottom(x).ticks(8).tickSize(-300));
-      const yAxis=g.append('g').attr('class','axis grid').call(d3.axisLeft(y).ticks(8).tickSize(-w));
+      const y=d3.scaleLinear().domain(d3.extent(data,d=>+d[yKey])).nice().range([height,0]);
+      g.append('g').attr('class','axis grid').attr('transform',`translate(0,${height})`).call(d3.axisBottom(x).ticks(8).tickSize(-height));
+      g.append('g').attr('class','axis grid').call(d3.axisLeft(y).ticks(8).tickSize(-w));
       g.selectAll('circle').data(data).enter().append('circle')
         .attr('cx',d=>x(d[xKey])).attr('cy',d=>y(d[yKey]))
         .attr('r',6).attr('fill','steelblue').attr('opacity',0.2)
@@ -55,8 +57,8 @@ fetch('scatter_data.json').then(r=>r.json()).then(data=>{
         return [x0,alpha+beta*x0];
       });
       const line=d3.line().curve(d3.curveBasis).x(d=>x(d[0])).y(d=>y(d[1]));
-      g.append('path').datum(smooth).attr('fill','none').attr('stroke','orange').attr('stroke-width',2).attr('d',line);
-      svg.append('text').attr('x',margin.left).attr('y',15).text(`${p[0]} vs Rating`);
+      g.append('path').attr('class','trend').datum(smooth).attr('d',line);
+      svg.append('text').attr('class','title').attr('x',margin.left).attr('y',15).text(`${p[0]} vs Rating`);
     });
   }
   draw();
