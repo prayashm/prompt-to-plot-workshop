@@ -330,8 +330,14 @@
         <div class="chart-section">
             <div class="chart-container">
                 <div class="chart-headline">Aroma: The Most Reliable Predictor of Excellence</div>
-                <div class="chart-subhead">Higher aroma scores show the strongest correlation with overall rating, more so than price</div>
+                <div class="chart-subhead">Higher aroma scores show the strongest correlation with overall rating, but some coffees still defy expectations</div>
+                <div class="outlier-controls">
+                    <button id="show-aroma-anomalies" class="outlier-btn">Show Anomalies</button>
+                    <button id="show-aroma-champions" class="outlier-btn">Show Champions</button>
+                    <button id="show-aroma-all" class="outlier-btn active">Show All</button>
+                </div>
                 <svg id="aroma-chart"></svg>
+                <div id="aroma-story" class="outlier-narrative"></div>
             </div>
         </div>
         
@@ -514,9 +520,11 @@
                     tooltip.transition().duration(300).style("opacity", 0);
                 });
             
-            // Special handling for flavor chart outliers
+            // Special handling for outliers
             if (chartType === 'flavor') {
                 createFlavorOutliers(g, xScale, yScale);
+            } else if (chartType === 'aroma') {
+                createAromaOutliers(g, xScale, yScale);
             }
         }
         
@@ -604,6 +612,122 @@
             window.flavorOutliers = { overachievers, underachievers };
         }
         
+        function createAromaOutliers(g, xScale, yScale) {
+            // Calculate expected rating for each point based on trend
+            const loessData = loess(data.map(d => ({x: d.aroma, y: d.rating})));
+            
+            // Find outliers with different thresholds for aroma (since it's more reliable)
+            const outliers = data.map(d => {
+                // Find closest trend point
+                const closest = loessData.reduce((prev, curr) => 
+                    Math.abs(curr.x - d.aroma) < Math.abs(prev.x - d.aroma) ? curr : prev
+                );
+                const deviation = d.rating - closest.y;
+                return {
+                    ...d,
+                    deviation,
+                    isAnomaly: Math.abs(deviation) > 2.0, // Lower threshold since aroma is more reliable
+                    isChampion: d.aroma >= 9.5 && d.rating >= 95, // Elite combination
+                    isLowAroma: d.aroma <= 8.0 && d.rating >= 92 // Surprising high ratings despite poor aroma
+                };
+            });
+            
+            const anomalies = outliers.filter(d => d.isAnomaly);
+            const champions = outliers.filter(d => d.isChampion);
+            const lowAromaStars = outliers.filter(d => d.isLowAroma);
+            
+            // Create outlier groups
+            const outlierGroup = g.append("g").attr("class", "aroma-outlier-annotations");
+            
+            // Anomaly points (both over and under performers)
+            outlierGroup.selectAll(".aroma-anomaly")
+                .data(anomalies)
+                .enter().append("circle")
+                .attr("class", "outlier-point aroma-anomaly")
+                .attr("r", 4)
+                .attr("cx", d => xScale(d.aroma))
+                .attr("cy", d => yScale(d.rating))
+                .attr("fill", "none")
+                .attr("stroke", d => d.deviation > 0 ? "#4CAF50" : "#f44336");
+            
+            // Champion points (perfect aroma + rating combo)
+            outlierGroup.selectAll(".aroma-champion")
+                .data(champions)
+                .enter().append("circle")
+                .attr("class", "outlier-point aroma-champion")
+                .attr("r", 5)
+                .attr("cx", d => xScale(d.aroma))
+                .attr("cy", d => yScale(d.rating))
+                .attr("fill", "none")
+                .attr("stroke", "#FFD700")
+                .attr("stroke-width", 3);
+            
+            // Low aroma stars
+            outlierGroup.selectAll(".aroma-star")
+                .data(lowAromaStars)
+                .enter().append("circle")
+                .attr("class", "outlier-point aroma-star")
+                .attr("r", 4)
+                .attr("cx", d => xScale(d.aroma))
+                .attr("cy", d => yScale(d.rating))
+                .attr("fill", "none")
+                .attr("stroke", "#9C27B0");
+            
+            // Annotations for most interesting cases
+            const topChampion = champions.sort((a, b) => (b.aroma + b.rating) - (a.aroma + a.rating))[0];
+            const biggestAnomaly = anomalies.sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation))[0];
+            const bestLowAroma = lowAromaStars.sort((a, b) => b.rating - a.rating)[0];
+            
+            if (topChampion) {
+                const x = xScale(topChampion.aroma);
+                const y = yScale(topChampion.rating);
+                
+                outlierGroup.append("line")
+                    .attr("class", "outlier-line champion-line")
+                    .attr("x1", x).attr("y1", y)
+                    .attr("x2", x - 50).attr("y2", y - 25);
+                
+                outlierGroup.append("text")
+                    .attr("class", "outlier-annotation champion-text")
+                    .attr("x", x - 55).attr("y", y - 30)
+                    .attr("text-anchor", "end")
+                    .text(`Perfect combo: ${topChampion.aroma}/10 aroma, ${topChampion.rating} rating`);
+            }
+            
+            if (biggestAnomaly) {
+                const x = xScale(biggestAnomaly.aroma);
+                const y = yScale(biggestAnomaly.rating);
+                
+                outlierGroup.append("line")
+                    .attr("class", "outlier-line anomaly-line")
+                    .attr("x1", x).attr("y1", y)
+                    .attr("x2", x + 40).attr("y2", y + (biggestAnomaly.deviation > 0 ? -30 : 30));
+                
+                outlierGroup.append("text")
+                    .attr("class", "outlier-annotation anomaly-text")
+                    .attr("x", x + 45).attr("y", y + (biggestAnomaly.deviation > 0 ? -35 : 35))
+                    .text(`${biggestAnomaly.deviation > 0 ? 'Exceeds' : 'Falls short'} by ${Math.abs(biggestAnomaly.deviation).toFixed(1)} points`);
+            }
+            
+            if (bestLowAroma) {
+                const x = xScale(bestLowAroma.aroma);
+                const y = yScale(bestLowAroma.rating);
+                
+                outlierGroup.append("line")
+                    .attr("class", "outlier-line star-line")
+                    .attr("x1", x).attr("y1", y)
+                    .attr("x2", x + 35).attr("y2", y + 25);
+                
+                outlierGroup.append("text")
+                    .attr("class", "outlier-annotation star-text")
+                    .attr("x", x + 40).attr("y", y + 30)
+                    .text(`${bestLowAroma.rating} rating despite ${bestLowAroma.aroma}/10 aroma`);
+            }
+            
+            // Store outlier data for interactive controls
+            window.aromaOutliers = { anomalies, champions, lowAromaStars };
+        }
+        
         function updateCharts() {
             width = Math.min(window.innerWidth - 40, 800) - margin.left - margin.right;
             
@@ -614,12 +738,19 @@
         
         // Outlier interaction controls
         function setupOutlierControls() {
+            // Flavor chart controls
             const showAll = document.getElementById('show-all');
             const showOverachievers = document.getElementById('show-overachievers');
             const showUnderachievers = document.getElementById('show-underachievers');
             const narrative = document.getElementById('outlier-story');
             
-            const narratives = {
+            // Aroma chart controls
+            const showAromaAll = document.getElementById('show-aroma-all');
+            const showAromaAnomalies = document.getElementById('show-aroma-anomalies');
+            const showAromaChampions = document.getElementById('show-aroma-champions');
+            const aromaNarrative = document.getElementById('aroma-story');
+            
+            const flavorNarratives = {
                 overachievers: `
                     <strong>The Overachievers:</strong> These coffees punch above their weight, achieving ratings that exceed what their flavor scores predict. 
                     Often, these represent exceptional processing methods, unique terroir, or masterful roasting that elevates the overall experience beyond pure taste. 
@@ -635,17 +766,32 @@
                 all: ``
             };
             
-            function updateOutlierDisplay(type) {
+            const aromaNarratives = {
+                anomalies: `
+                    <strong>The Aroma Anomalies:</strong> These rare exceptions prove that even the most reliable predictor isn't foolproof. 
+                    Some coffees with modest aroma scores achieve surprisingly high ratings, while others with excellent aromas disappoint. 
+                    These outliers often represent unique processing methods or reviewer subjectivity that transcends the typical aroma-rating relationship.
+                `,
+                champions: `
+                    <strong>The Aroma Champions:</strong> The coffee elite—those achieving 9.5+ aroma scores while earning 95+ ratings. 
+                    These represent the pinnacle of coffee craft, where exceptional roasting technique meets premium beans. 
+                    Only ${window.aromaOutliers?.champions?.length || 0} coffees in our dataset achieve this perfect combination, 
+                    proving that true excellence is indeed rare.
+                `,
+                all: ``
+            };
+            
+            function updateFlavorOutliers(type) {
                 // Update button states
-                document.querySelectorAll('.outlier-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#show-all, #show-overachievers, #show-underachievers').forEach(btn => btn.classList.remove('active'));
                 
                 // Update annotations visibility
-                d3.selectAll('.outlier-point').classed('show', false);
-                d3.selectAll('.outlier-line').style('opacity', 0);
-                d3.selectAll('.outlier-annotation').style('opacity', 0);
+                d3.selectAll('.overachiever, .underachiever').classed('show', false);
+                d3.selectAll('.overachiever-line, .underachiever-line').style('opacity', 0);
+                d3.selectAll('.overachiever-text, .underachiever-text').style('opacity', 0);
                 
                 // Show narrative
-                narrative.innerHTML = narratives[type];
+                narrative.innerHTML = flavorNarratives[type];
                 narrative.classList.toggle('show', type !== 'all');
                 
                 if (type === 'overachievers') {
@@ -663,9 +809,43 @@
                 }
             }
             
-            showAll.addEventListener('click', () => updateOutlierDisplay('all'));
-            showOverachievers.addEventListener('click', () => updateOutlierDisplay('overachievers'));
-            showUnderachievers.addEventListener('click', () => updateOutlierDisplay('underachievers'));
+            function updateAromaOutliers(type) {
+                // Update button states
+                document.querySelectorAll('#show-aroma-all, #show-aroma-anomalies, #show-aroma-champions').forEach(btn => btn.classList.remove('active'));
+                
+                // Update annotations visibility
+                d3.selectAll('.aroma-anomaly, .aroma-champion, .aroma-star').classed('show', false);
+                d3.selectAll('.anomaly-line, .champion-line, .star-line').style('opacity', 0);
+                d3.selectAll('.anomaly-text, .champion-text, .star-text').style('opacity', 0);
+                
+                // Show narrative
+                aromaNarrative.innerHTML = aromaNarratives[type];
+                aromaNarrative.classList.toggle('show', type !== 'all');
+                
+                if (type === 'anomalies') {
+                    showAromaAnomalies.classList.add('active');
+                    d3.selectAll('.aroma-anomaly, .aroma-star').classed('show', true);
+                    d3.selectAll('.anomaly-line, .star-line').style('opacity', 1);
+                    d3.selectAll('.anomaly-text, .star-text').style('opacity', 1);
+                } else if (type === 'champions') {
+                    showAromaChampions.classList.add('active');
+                    d3.selectAll('.aroma-champion').classed('show', true);
+                    d3.selectAll('.champion-line').style('opacity', 1);
+                    d3.selectAll('.champion-text').style('opacity', 1);
+                } else {
+                    showAromaAll.classList.add('active');
+                }
+            }
+            
+            // Flavor chart event listeners
+            if (showAll) showAll.addEventListener('click', () => updateFlavorOutliers('all'));
+            if (showOverachievers) showOverachievers.addEventListener('click', () => updateFlavorOutliers('overachievers'));
+            if (showUnderachievers) showUnderachievers.addEventListener('click', () => updateFlavorOutliers('underachievers'));
+            
+            // Aroma chart event listeners
+            if (showAromaAll) showAromaAll.addEventListener('click', () => updateAromaOutliers('all'));
+            if (showAromaAnomalies) showAromaAnomalies.addEventListener('click', () => updateAromaOutliers('anomalies'));
+            if (showAromaChampions) showAromaChampions.addEventListener('click', () => updateAromaOutliers('champions'));
         }
         
         // Load data and create charts
