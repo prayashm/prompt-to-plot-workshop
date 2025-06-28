@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coffee Review Scatter Trends</title>
+<style>
+body{margin:0;font-family:'Segoe UI',Roboto,sans-serif;background:#fafafa;color:#222}
+svg{width:100%;height:350px;display:block}
+.axis path,.axis line{stroke:#000;stroke-width:1;shape-rendering:crispEdges}
+.grid line{stroke:#ddd;stroke-dasharray:2 2}
+.tooltip{position:absolute;background:#fff;border:1px solid #ccc;padding:4px;font-size:12px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="plots"></div>
+<footer style="text-align:center;padding:1em 0;font-size:14px">Data © <a href="https://www.coffeereview.com">CoffeeReview.com</a></footer>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+fetch('scatter_data.json').then(r=>r.json()).then(data=>{
+  const plots=[['Price ($/oz)','rating','price'],['Aroma','rating','aroma'],['Flavor','rating','flavor']],
+        div=d3.select('#plots'),margin={top:20,right:20,bottom:40,left:50};
+  const tip=d3.select('body').append('div').attr('class','tooltip').style('opacity',0);
+  function draw(){
+    div.selectAll('*').remove();
+    const w=div.node().clientWidth-margin.left-margin.right;
+    plots.forEach(p=>{
+      const xKey=p[2],yKey=p[1];
+      const svg=div.append('svg');
+      const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+      const x=d3.scaleLinear().domain(d3.extent(data,d=>+d[xKey])).nice().range([0,w]);
+      const y=d3.scaleLinear().domain(d3.extent(data,d=>+d[yKey])).nice().range([300,0]);
+      const xAxis=g.append('g').attr('transform','translate(0,300)').call(d3.axisBottom(x).ticks(8).tickSize(-300));
+      const yAxis=g.append('g').call(d3.axisLeft(y).ticks(8).tickSize(-w));
+      g.selectAll('circle').data(data).enter().append('circle')
+        .attr('cx',d=>x(d[xKey])).attr('cy',d=>y(d[yKey]))
+        .attr('r',6).attr('fill','steelblue').attr('opacity',0.2)
+        .on('mousemove',event=>{
+          const d=d3.select(event.target).datum();
+          tip.html(`${xKey}: ${d[xKey].toFixed(2)}<br>${yKey}: ${d[yKey].toFixed(2)}`)
+            .style('left',(event.pageX+5)+'px').style('top',(event.pageY-28)+'px')
+            .style('opacity',1);
+        }).on('mouseout',()=>tip.style('opacity',0));
+      const sorted=data.slice().sort((a,b)=>d3.ascending(+a[xKey],+b[xKey])),span=Math.floor(sorted.length*0.3);
+      const smooth=sorted.map((d,i)=>{
+        const l=Math.max(0,i-span),r=Math.min(sorted.length-1,i+span),x0=+d[xKey];
+        let sx=0,sy=0,sxx=0,sxy=0,wSum=0;
+        for(let j=l;j<=r;j++){
+          const xj=+sorted[j][xKey],yj=+sorted[j][yKey];
+          const dist=Math.abs(xj-x0)/(sorted[r][xKey]-sorted[l][xKey]||1);
+          const w=Math.pow(1-Math.pow(dist,3),3);
+          wSum+=w;sx+=xj*w;sy+=yj*w;sxx+=xj*xj*w;sxy+=xj*yj*w;
+        }
+        const beta=(wSum*sxy-sx*sy)/(wSum*sxx-sx*sx),alpha=(sy-beta*sx)/wSum;
+        return [x0,alpha+beta*x0];
+      });
+      const line=d3.line().curve(d3.curveBasis).x(d=>x(d[0])).y(d=>y(d[1]));
+      g.append('path').datum(smooth).attr('fill','none').attr('stroke','orange').attr('stroke-width',2).attr('d',line);
+      svg.append('text').attr('x',margin.left).attr('y',15).text(`${p[0]} vs Rating`);
+    });
+  }
+  draw();
+  window.addEventListener('resize',draw);
+});
+</script>
+</body>
+</html>
