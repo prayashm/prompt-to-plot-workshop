@@ -6,17 +6,44 @@
     <title>The Price of Perfection: What Makes a $175-Per-Ounce Coffee Worth It</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #121212;
+            --text-secondary: #666;
+            --border-color: #e2e2e2;
+            --grid-color: #f0f0f0;
+            --highlight-bg: #f8f8f8;
+            --accent-color: #ff6b35;
+            --data-point-color: #1f77b4;
+            --tooltip-bg: rgba(18, 18, 18, 0.95);
+            --tooltip-text: white;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #e8e8e8;
+            --text-secondary: #b0b0b0;
+            --border-color: #333;
+            --grid-color: #2a2a2a;
+            --highlight-bg: #2a2a2a;
+            --accent-color: #ff7b47;
+            --data-point-color: #4a9eff;
+            --tooltip-bg: rgba(240, 240, 240, 0.95);
+            --tooltip-text: #121212;
+        }
+        
         * {
             box-sizing: border-box;
         }
         
         body {
             font-family: "nyt-cheltenham", "nyt-imperial", Georgia, "Times New Roman", Times, serif;
-            background-color: #ffffff;
-            color: #121212;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 0;
             line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .story-container {
@@ -31,14 +58,14 @@
             font-weight: 700;
             line-height: 1.1;
             margin: 40px 0 20px 0;
-            color: #121212;
+            color: var(--text-color);
         }
         
         .subhead {
             font-family: "nyt-imperial", Georgia, serif;
             font-size: clamp(18px, 2.5vw, 24px);
             font-weight: 400;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 40px;
             line-height: 1.4;
         }
@@ -46,17 +73,54 @@
         .byline {
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 40px;
-            border-bottom: 1px solid #e2e2e2;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dark-mode-toggle {
+            background: var(--highlight-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .dark-mode-toggle:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .dark-mode-toggle .sun-icon {
+            display: inline;
+        }
+        
+        .dark-mode-toggle .moon-icon {
+            display: none;
+        }
+        
+        [data-theme="dark"] .dark-mode-toggle .sun-icon {
+            display: none;
+        }
+        
+        [data-theme="dark"] .dark-mode-toggle .moon-icon {
+            display: inline;
         }
         
         .story-text {
             font-family: "nyt-imperial", Georgia, serif;
             font-size: 20px;
             line-height: 1.7;
-            color: #121212;
+            color: var(--text-color);
             margin-bottom: 40px;
             max-width: 600px;
         }
@@ -89,13 +153,13 @@
             font-size: 28px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #121212;
+            color: var(--text-color);
         }
         
         .chart-subhead {
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 16px;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 30px;
             max-width: 500px;
         }
@@ -103,18 +167,18 @@
         .axis {
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 12px;
-            color: #666;
+            color: var(--text-secondary);
         }
         
         .axis-label {
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 14px;
-            color: #333;
+            color: var(--text-color);
             font-weight: 500;
         }
         
         .grid line {
-            stroke: #f0f0f0;
+            stroke: var(--grid-color);
             stroke-width: 1;
             opacity: 0.7;
         }
@@ -124,14 +188,14 @@
         }
         
         .axis line, .axis path {
-            stroke: #333;
+            stroke: var(--text-color);
             stroke-width: 1;
         }
         
         .tooltip {
             position: absolute;
-            background: rgba(18, 18, 18, 0.95);
-            color: white;
+            background: var(--tooltip-bg);
+            color: var(--tooltip-text);
             padding: 12px 16px;
             border-radius: 4px;
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -144,13 +208,13 @@
         
         .trend-line {
             fill: none;
-            stroke: #ff6b35;
+            stroke: var(--accent-color);
             stroke-width: 3;
             opacity: 0.8;
         }
         
         .data-point {
-            fill: #1f77b4;
+            fill: var(--data-point-color);
             opacity: 0.4;
             transition: opacity 0.2s ease;
         }
@@ -163,17 +227,17 @@
             font-family: "nyt-cheltenham", Georgia, serif;
             font-size: 28px;
             line-height: 1.3;
-            color: #121212;
+            color: var(--text-color);
             margin: 40px 0;
             padding: 0 40px;
-            border-left: 4px solid #ff6b35;
+            border-left: 4px solid var(--accent-color);
             font-weight: 400;
             font-style: italic;
         }
         
         .highlight-box {
-            background: #f8f8f8;
-            border-left: 4px solid #ff6b35;
+            background: var(--highlight-bg);
+            border-left: 4px solid var(--accent-color);
             padding: 20px;
             margin: 40px 0;
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -183,25 +247,25 @@
             font-family: "nyt-cheltenham", Georgia, serif;
             font-size: 18px;
             margin-top: 0;
-            color: #121212;
+            color: var(--text-color);
         }
         
         footer {
             margin-top: 80px;
             padding: 40px 0;
-            border-top: 1px solid #e2e2e2;
+            border-top: 1px solid var(--border-color);
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
         }
         
         .methodology {
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #e2e2e2;
+            border-top: 1px solid var(--border-color);
         }
         
         .outlier-controls {
@@ -211,8 +275,9 @@
         
         .outlier-btn {
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: #f8f8f8;
-            border: 1px solid #ddd;
+            background: var(--highlight-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
             padding: 8px 16px;
             margin: 0 5px;
             border-radius: 20px;
@@ -222,23 +287,26 @@
         }
         
         .outlier-btn:hover {
-            background: #e8e8e8;
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
         }
         
         .outlier-btn.active {
-            background: #ff6b35;
+            background: var(--accent-color);
             color: white;
-            border-color: #ff6b35;
+            border-color: var(--accent-color);
         }
         
         .outlier-narrative {
-            background: #f9f9f9;
-            border-left: 4px solid #ff6b35;
+            background: var(--highlight-bg);
+            border-left: 4px solid var(--accent-color);
             padding: 20px;
             margin-top: 20px;
             font-family: "nyt-imperial", Georgia, serif;
             font-size: 16px;
             line-height: 1.6;
+            color: var(--text-color);
             opacity: 0;
             max-height: 0;
             overflow: hidden;
@@ -254,12 +322,12 @@
             pointer-events: none;
             font-family: "nyt-franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 12px;
-            fill: #333;
+            fill: var(--text-color);
             font-weight: 500;
         }
         
         .outlier-line {
-            stroke: #ff6b35;
+            stroke: var(--accent-color);
             stroke-width: 1;
             stroke-dasharray: 2,2;
             opacity: 0;
@@ -267,7 +335,7 @@
         }
         
         .outlier-point {
-            stroke: #ff6b35;
+            stroke: var(--accent-color);
             stroke-width: 2;
             opacity: 0;
             transition: all 0.3s ease;
@@ -303,6 +371,10 @@
         
         <div class="byline">
             By Data Visualization Team • Published Today
+            <button id="dark-mode-toggle" class="dark-mode-toggle" aria-label="Toggle dark mode">
+                <span class="sun-icon">☀️</span>
+                <span class="moon-icon">🌙</span>
+            </button>
         </div>
         
         <div class="story-text">
@@ -848,10 +920,34 @@
             if (showAromaChampions) showAromaChampions.addEventListener('click', () => updateAromaOutliers('champions'));
         }
         
+        // Dark mode functionality
+        function initDarkMode() {
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+            
+            // Check for saved theme preference or default to light
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            body.setAttribute('data-theme', savedTheme);
+            
+            darkModeToggle.addEventListener('click', () => {
+                const currentTheme = body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Update chart colors after theme change
+                updateCharts();
+            });
+        }
+        
         // Load data and create charts
         d3.json("scatter_data.json").then(function(loadedData) {
             data = loadedData;
             updateCharts();
+            
+            // Setup dark mode
+            initDarkMode();
             
             // Setup outlier controls after charts are created
             setTimeout(() => {
